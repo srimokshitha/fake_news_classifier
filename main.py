@@ -1,53 +1,50 @@
-Fake News Classification using Machine Learning
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix
 
-This project is focused on detecting fake news using machine learning techniques. It analyzes news article content to determine whether it is real or fake, aiming to combat the spread of misinformation.
+print("✅ Loading dataset...")
 
-Objective
+# Load both files
+true_df = pd.read_csv("dataset/True.csv")
+fake_df = pd.read_csv("dataset/Fake.csv")
 
-The goal is to build a classification model capable of identifying fake news articles through text analysis and supervised learning.
+# Add labels
+true_df['label'] = 'REAL'
+fake_df['label'] = 'FAKE'
 
-Project Files
+# Combine
+df = pd.concat([true_df, fake_df], ignore_index=True)
+df = df[['text', 'label']]  # Keep only required columns
 
-main.py: Core script containing preprocessing, training, and evaluation
+print("✅ Preprocessing...")
 
-requirements.txt: Python dependencies
+# Split
+X_train, X_test, y_train, y_test = train_test_split(df['text'], df['label'], test_size=0.2, random_state=42)
 
-README.md: Documentation for the project
+# TF-IDF
+vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
+X_train_vec = vectorizer.fit_transform(X_train)
+X_test_vec = vectorizer.transform(X_test)
 
-Methodology
+# Train
+model = LogisticRegression()
+model.fit(X_train_vec, y_train)
 
-Data loading from a labeled dataset (real vs. fake news)
+# Predict
+y_pred = model.predict(X_test_vec)
 
-Text preprocessing: lowercasing, tokenization, stopword and punctuation removal
+# Evaluate
+acc = accuracy_score(y_test, y_pred)
+print(f"✅ Accuracy: {acc:.2f}")
 
-Feature extraction using TF-IDF vectorization
-
-Model training using algorithms such as Logistic Regression or PassiveAggressiveClassifier
-
-Evaluation through accuracy, confusion matrix, and F1-score
-
-Installation
-
-Install all dependencies using the following command:
-
-pip install -r requirements.txt
-
-Running the Project
-
-Run the classifier using:
-
-python main.py
-
-Make sure the dataset is present in the working directory and correctly referenced in the script.
-
-Future Enhancements
-
-Use deep learning models like LSTM or BERT
-
-Create a web-based interface for public access
-
-Improve accuracy with larger and more diverse datasets
-
-License
-
-This project is open-source and intended for educational use. Contributions are welcome.
+# Plot Confusion Matrix
+cm = confusion_matrix(y_test, y_pred, labels=["FAKE", "REAL"])
+sns.heatmap(cm, annot=True, fmt='d', xticklabels=["FAKE", "REAL"], yticklabels=["FAKE", "REAL"])
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix")
+plt.show()
